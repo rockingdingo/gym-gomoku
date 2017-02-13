@@ -1,3 +1,8 @@
+'''Gomoku Rule and Policy Util
+@author: Xichen Ding
+@date: 2017/2/13
+'''
+
 import numpy as np
 import gym
 from gym import spaces
@@ -129,7 +134,7 @@ class GomokuUtil(object):
         return exist, pattern_found
     
     def check_pattern_index(self, board_state, pattern):
-        '''Return the line contains the pattern, and its start index of the pattern
+        '''Return the line contains the pattern, and its start position index of the pattern
         '''
         start = -1
         startlist = []
@@ -193,39 +198,69 @@ def make_beginner_policy(np_random):
         opponent_color = gomoku_util.other_color(player_color)
         lines, start, next_move = None, None, None # initialization
         
-        ## Defend Strategy, check if these patterns exist:
-        # Four in a Row A: [empty,color,color,color,color]
-        pattern_four_a = [0] + [gomoku_util.color_dict[opponent_color]] * 4 
-        lines, start = gomoku_util.check_pattern_index(b.board_state, pattern_four_a)
-        if (len(start)>= 1): # At least 1 found
-            next_move = lines[0][start[0]]
-            return b.coord_to_action(next_move[0], next_move[1])
-        else:
-            lines, start, next_move = None, None, None
+        # List all the defend patterns
+        pattern_four_a = [0] + [gomoku_util.color_dict[opponent_color]] * 4         #[0,1,1,1,1]
+        pattern_four_b = [gomoku_util.color_dict[opponent_color]] * 4 + [0]         #[1,1,1,1,0]
+        pattern_three_a = [0] + [gomoku_util.color_dict[opponent_color]] * 3 + [0]  #[0,1,1,1,0]
+        pattern_three_b = [gomoku_util.color_dict[opponent_color]] * 2 + [0] + [gomoku_util.color_dict[opponent_color]] * 1  #[1,1,0,1]
+        pattern_three_c = [gomoku_util.color_dict[opponent_color]] * 1 + [0] + [gomoku_util.color_dict[opponent_color]] * 2  #[1,0,1,1]
+        patterns = [pattern_four_a, pattern_four_b, pattern_three_a, pattern_three_b, pattern_three_c]
         
-        # Four in a Row B: [color,color,color,color,empty]
-        pattern_four_b = [gomoku_util.color_dict[opponent_color]] * 4 + [0]
-        lines, start = gomoku_util.check_pattern_index(b.board_state, pattern_four_b)
-        if (len(start)>= 1): # At least 1 found
-            next_move = lines[0][start[0] + 4]
-            return b.coord_to_action(next_move[0], next_move[1])
-        else:
-            lines, start, next_move = None, None, None
+        for p in patterns:
+            action = connect_line(b, p)
+            if (action): # Action is not none, pattern is found, place stone
+                return action
         
-        # Three in a Row: [empty,color,color,color,empty] 
-        pattern_three = [0] + [gomoku_util.color_dict[opponent_color]] * 3 + [0]
-        lines, start = gomoku_util.check_pattern_index(b.board_state, pattern_three)
-        if (len(start) >= 1):
-            line = lines[0] # deal with the first three-in-a-row
-            start_idx = start[0]
-            moves = [line[start_idx], line[start_idx + 4]]
-            next_move = moves[np_random.choice(len(moves))]
-            return b.coord_to_action(next_move[0], next_move[1])
-        else:
-            lines, start, next_move = None, None, None
+        # No defend pattern found
         return None
     
-    def strike_policy_B(curr_state, prev_state, prev_action):
+    def fill_box(board, coord):
+        ''' check the box area around the previous coord, if there is empty place in the empty area
+            Return: 
+                action for within the box if there is empty
+                random action if the box if full
+        '''
+        all_legal_moves = board.get_legal_move()
+        if (coord[0] >=0): # last move coord should be within the board
+            box = [(i,j) for i in range(coord[0]-1, coord[0]+ 2) for j in range(coord[1]-1, coord[1] + 2)] # 3x3 box
+            legal_moves = []
+            for c in box:
+                if (c in all_legal_moves):
+                    legal_moves.append(c)
+            if (len(legal_moves) == 0):
+                # all the box is full
+                next_move = all_legal_moves[np_random.choice(len(all_legal_moves))]
+                return board.coord_to_action(next_move[0], next_move[1])
+            else :
+                next_move = legal_moves[np_random.choice(len(legal_moves))]
+                return board.coord_to_action(next_move[0], next_move[1])
+        else:
+            next_move = all_legal_moves[np_random.choice(len(all_legal_moves))]
+            return board.coord_to_action(next_move[0], next_move[1])
+    
+    def connect_line(board, pattern):
+        ''' Check if pattern exist in board_state, Fill one empty space to connect the dots to a line
+            Return: Action ID
+        '''
+        start_idx = 0
+        empty_idx = []
+        for id, val in enumerate(pattern):
+            if (val == 0):
+                empty_idx.append(id)
+        
+        lines, starts = gomoku_util.check_pattern_index(board.board_state, pattern)
+        if (len(starts)>= 1): # At least 1 found
+            line_id = np_random.choice(len(lines)) # randomly choose one line
+            line = lines[line_id] # [(x1,y1), (x2,y2), ...]
+            start_idx = starts[line_id]
+            # Choose next_move among all the available the empty space in the pattern
+            next_idx = start_idx + empty_idx[np_random.choice(len(empty_idx))]
+            next_move = line[next_idx]
+            return board.coord_to_action(next_move[0], next_move[1])
+        else:
+            return None
+    
+    def strike_policy(curr_state, prev_state, prev_action):
         b = curr_state.board
         all_legal_moves = b.get_legal_move()
         
@@ -234,90 +269,23 @@ def make_beginner_policy(np_random):
         last_coord = prev_state.board.last_coord
         player_color = curr_state.color
         
-        # 4 player_color in a row, [empty,color,color,color,color]
-        pattern_four_a = [0] + [gomoku_util.color_dict[player_color]] * 4 
-        lines, start = gomoku_util.check_pattern_index(b.board_state, pattern_four_a)
-        if (len(start)>= 1): # At least 1 found
-            next_move = lines[0][start[0]]
-            return b.coord_to_action(next_move[0], next_move[1])
-        else:
-            lines, start, next_move = None, None, None
+        # List all the strike patterns
+        pattern_four_a = [0] + [gomoku_util.color_dict[player_color]] * 4         #[0,1,1,1,1]
+        pattern_four_b = [gomoku_util.color_dict[player_color]] * 4 + [0]         #[1,1,1,1,0]
+        pattern_three_a = [0] + [gomoku_util.color_dict[player_color]] * 3 + [0]  #[0,1,1,1,0]
+        pattern_three_b = [gomoku_util.color_dict[player_color]] * 2 + [0] + [gomoku_util.color_dict[player_color]] * 1  #[1,1,0,1]
+        pattern_three_c = [gomoku_util.color_dict[player_color]] * 1 + [0] + [gomoku_util.color_dict[player_color]] * 2  #[1,0,1,1]
+        pattern_two = [0] + [gomoku_util.color_dict[player_color]] * 2 + [0]      #[0,1,1,0]
+        patterns = [pattern_four_a, pattern_four_b, pattern_three_a, pattern_three_b, pattern_three_c, pattern_two]
         
-        # 4 in a Row B: [color,color,color,color,empty]
-        pattern_four_b = [gomoku_util.color_dict[player_color]] * 4 + [0]
-        lines, start = gomoku_util.check_pattern_index(b.board_state, pattern_four_b)
-        if (len(start)>= 1): # At least 1 found
-            next_move = lines[0][start[0] + 4]
-            return b.coord_to_action(next_move[0], next_move[1])
-        else:
-            lines, start, next_move = None, None, None
+        for p in patterns:
+            action = connect_line(b, p)
+            if (action): # Action is not none, pattern is found
+                return action
         
-        # 3 in a row, place one, add to 4
-        pattern_three = [0] + [gomoku_util.color_dict[player_color]] * 3 + [0]
-        lines, start = gomoku_util.check_pattern_index(b.board_state, pattern_three)
-        if (len(start) >= 1):
-            line = lines[0] # deal with the first three-in-a-row
-            start_idx = start[0]
-            moves = [line[start_idx], line[start_idx + 4]]
-            next_move = moves[np_random.choice(len(moves))]
-            return b.coord_to_action(next_move[0], next_move[1])
-        else:
-            lines, start, next_move = None, None, None
-        
-        # 2 in a row, empty place one, add to 3
-        pattern_two = [0] + [gomoku_util.color_dict[player_color]] * 2 + [0]
-        lines, start = gomoku_util.check_pattern_index(b.board_state, pattern_two)
-        if (len(start) >= 1):
-            line = lines[0] # deal with the first three-in-a-row
-            start_idx = start[0]
-            moves = [line[start_idx], line[start_idx + 3]]
-            next_move = moves[np_random.choice(len(moves))]
-            return b.coord_to_action(next_move[0], next_move[1])
-        else:
-            lines, start, next_move = None, None, None
-        
-        # no other coord found, place around the box within previous move
-        if (last_coord[0] >=0): # not the first move of 'white' (-1,-1)
-            box = [(i,j) for i in range(last_coord[0]-1, last_coord[0]+ 2) for j in range(last_coord[1]-1, last_coord[1] + 2)] # 3x3 box
-            legal_moves = []
-            for coord in box:
-                if (coord in all_legal_moves):
-                    legal_moves.append(coord)
-            if (len(legal_moves) ==0):
-                return None
-            else :
-                next_move = legal_moves[np_random.choice(len(legal_moves))]
-                return b.coord_to_action(next_move[0], next_move[1])
-        else:
-            legal_moves = b.get_legal_move() # choose from all legal moves
-            next_move = legal_moves[np_random.choice(len(legal_moves))]
-            return b.coord_to_action(next_move[0], next_move[1])
-    
-    def strike_policy_A(curr_state, prev_action):
-        '''Return the random action Id within the box of prev_action
-        '''
-        b = curr_state.board
-        all_legal_moves = b.get_legal_move()
-        
-        if prev_action is None:
-            # initial game on empty board, random select a position
-            next_move = all_legal_moves[np_random.choice(len(all_legal_moves))]
-            return b.coord_to_action(next_move[0], next_move[1])
-        
-        # place a stone around previous move
-        prev_coord = b.action_to_coord(prev_action)
-        box = [(i,j) for i in range(prev_coord[0]-1, prev_coord[0]+ 2) for j in range(prev_coord[1]-1, prev_coord[1] + 2)] # 3x3 box
-        legal_moves = []
-        for coord in box:
-            if (coord in all_legal_moves):
-                legal_moves.append(coord)
-        
-        # If there is no legal moves around the prev_action position
-        if (len(legal_moves) ==0):
-            return None
-        else :
-            next_move = legal_moves[np_random.choice(len(legal_moves))]
-            return b.coord_to_action(next_move[0], next_move[1])
+        # no other strike pattern found, place around the box within previous move
+        action = fill_box(b, last_coord)
+        return action
     
     def beginner_policy(curr_state, prev_state, prev_action):
         b = curr_state.board
@@ -331,7 +299,7 @@ def make_beginner_policy(np_random):
             return action_defend
         
         # No Defend Strategy Met, Use Strike policy B to connect a line
-        action_strike = strike_policy_B(curr_state, prev_state, prev_action)
+        action_strike = strike_policy(curr_state, prev_state, prev_action)
         if action_strike is not None:
             return action_strike
         

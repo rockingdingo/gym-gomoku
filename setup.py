@@ -10,6 +10,6 @@ setup(
     author = 'Xichen Ding',
     author_email = 'dingo0927@126.com',
     license="MIT",
-    keywords='gym gomoku ReinforcementLearning',
+    keywords='gym gomoku reinforcement learning',
     install_requires=['gym'],
 )
