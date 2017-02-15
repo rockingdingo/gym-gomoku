@@ -42,14 +42,3 @@ for _ in range(20):
         break
 ```
 
-# DQN algorithm to learn Gomoku
-```python
-cd test
-python test_dqn.py
-```
-
-# Actor-Critic algorithm to learn Gomoku
-```python
-cd test
-python test_actor_critic.py
-```
