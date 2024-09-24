@@ -397,7 +397,6 @@ e.g.
 [Use Gemini to Conduct Data Analysis](http://www.deepnlp.org/store/productivity-tool/research-&-analysis/pub-gemini-google/use-gemini-to-conduct-data-analysis)
 
 
-
 ## DeepNLP AI & Robots Community Communities
 
 [DeepNLP AI & Robots Community for AI Practitioner](http://www.deepnlp.org/question) <br>
@@ -409,6 +408,11 @@ e.g.
 [Humanoid Robot Wife Who would you choose your humanoid robot wife to look like human females](http://www.deepnlp.org/question/humanoid-robot-wife-who-would-you-choose-your-humanoid-robot-wife-to-look-like-human-females) <br>
 [What are the most important features Humanoid Robot should have in the future](http://www.deepnlp.org/question/what-are-the-most-important-features-humanoid-robot-should-have-in-the-future) <br>
 [What are the typical use cases of Humanoid Robots](http://www.deepnlp.org/question/what-are-the-typical-use-cases-of-humanoid-robots) <br>
+
+
+## AI Agents Multi-Agents Reasoning
+[AI Agent Visualization Review Asynchronous Multi-Agent Simulation](http://www.deepnlp.org/blog/ai-agent-visualization-review-asynchronous-multi-agent-simulation) <br>
+[Dialogue Visualization Agent Multimodal Visualization Tools for AI Systems A Review](http://www.deepnlp.org/blog/dialogue-agent-multimodal-visualization-tools-for-ai-systems) <br>
 
 
 ## Related
@@ -426,3 +430,5 @@ http://www.deepnlp.org/workspace/detail/ <br>
 [DeepNLP Watch Bags Review Panel](http://www.deepnlp.org/review/ecommerce/watch) <br>
 [DeepNLP Review Ecommerce Brand List](http://www.deepnlp.org/review/ecommerce/pub) <br>
 [DeepNLP Review Car Brand List](http://www.deepnlp.org/review/car/pub) <br>
+[AI Agent Visualization Review Asynchronous Multi-Agent Simulation](http://www.deepnlp.org/blog/ai-agent-visualization-review-asynchronous-multi-agent-simulation) <br>
+[Dialogue Visualization Agent Multimodal Visualization Tools for AI Systems A Review](http://www.deepnlp.org/blog/dialogue-agent-multimodal-visualization-tools-for-ai-systems) <br>
